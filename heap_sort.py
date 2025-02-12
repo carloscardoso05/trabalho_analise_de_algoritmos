@@ -34,7 +34,7 @@ def heapify(arr: np.ndarray, n: int, i: int) -> Tuple[int, int]:
     return comparisions, swaps
 
 
-def heapSort(arr: np.ndarray) -> SortResult:
+def heap_sort(arr: np.ndarray) -> SortResult:
     start = time.time()
     comparisions = 0
     swaps = 0

@@ -2,7 +2,7 @@ import time
 from sort_result import SortResult
 
 
-def shellSort(arr, n=None) -> SortResult:
+def shell_sort(arr, n=None) -> SortResult:
     start = time.time()
     comparisions = 0
     swaps = 0

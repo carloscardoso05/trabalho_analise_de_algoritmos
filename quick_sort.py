@@ -25,7 +25,7 @@ def partition(arr, low, high) -> Tuple[int, int, int]:
     return i + 1, comparisions, swaps
 
 
-def quickSort(arr: np.ndarray, low=0, high=None, comparisions=0, swaps=0) -> SortResult:
+def quick_sort(arr: np.ndarray, low=0, high=None, comparisions=0, swaps=0) -> SortResult:
     start = time.time()
     if high is None:
         high = len(arr) - 1
@@ -34,8 +34,8 @@ def quickSort(arr: np.ndarray, low=0, high=None, comparisions=0, swaps=0) -> Sor
     if low < high:
         pi, p_comparisions, p_swaps = partition(arr, low, high)
 
-        r1 = quickSort(arr, low, pi - 1, comparisions, swaps)
-        r2 = quickSort(arr, pi + 1, high, comparisions, swaps)
+        r1 = quick_sort(arr, low, pi - 1, comparisions, swaps)
+        r2 = quick_sort(arr, pi + 1, high, comparisions, swaps)
 
         comparisions += p_comparisions + r1.comparisions + r2.comparisions
         swaps += p_swaps + r1.swaps + r2.swaps
