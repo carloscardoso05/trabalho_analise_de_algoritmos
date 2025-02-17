@@ -1,204 +1,216 @@
 import random
 import sys
-import time
+from time import time
+from matplotlib import pyplot as plt
 
-import matplotlib.pyplot as plt
-
+# Aumenta o limite de recursão para o quicksort funcionar com vetores grandes
 sys.setrecursionlimit(2 ** 16)
 
 
-# Quick Sort com partição tradicional
-def quick_sort(arr):
-    comparacoes = 0
-    trocas = 0
+def quicksort(arr):
+    """Implementação clássica do Quicksort com pivô no final"""
+    comps = 0
+    swaps = 0
 
-    def particao(arr, low, high):
-        nonlocal comparacoes, trocas
-        pivo = arr[high]  # Escolhe o último elemento como pivô
-        i = low - 1  # Índice do menor elemento
+    def particiona(v, esq, dir):
+        nonlocal comps, swaps
+        pivo = v[dir]  # Pivô no último elemento (Lomuto)
+        i = esq - 1
 
-        for j in range(low, high):
-            comparacoes += 1
-            if arr[j] <= pivo:
+        for j in range(esq, dir):
+            comps += 1
+            if v[j] <= pivo:
                 i += 1
-                arr[i], arr[j] = arr[j], arr[i]
-                trocas += 1
+                if i != j:
+                    v[i], v[j] = v[j], v[i]
+                    swaps += 1
 
-        arr[i + 1], arr[high] = arr[high], arr[i + 1]
-        trocas += 1
-        return i + 1
+        pos_pivo = i + 1
+        v[pos_pivo], v[dir] = v[dir], v[pos_pivo]
+        swaps += 1
+        return pos_pivo
 
-    def _quick_sort(arr, low, high):
-        nonlocal comparacoes, trocas
-        if low < high:
-            pi = particao(arr, low, high)  # Índice da partição
-            _quick_sort(arr, low, pi - 1)  # Ordena a parte esquerda
-            _quick_sort(arr, pi + 1, high)  # Ordena a parte direita
+    def ordena(v, esq, dir):
+        nonlocal comps
+        comps += 1
+        if esq < dir:
+            p = particiona(v, esq, dir)
+            ordena(v, esq, p - 1)
+            ordena(v, p + 1, dir)
 
-    _quick_sort(arr, 0, len(arr) - 1)
-    return arr, comparacoes, trocas
+    copia = arr.copy()
+    ordena(copia, 0, len(copia) - 1)
+    return copia, comps, swaps
 
 
-# Shell Sort
-def shell_sort(arr):
-    n = len(arr)
+def shellsort(lista):
+    """Shellsort usando sequência de gaps original (N/2, N/4, ...)"""
+    n = len(lista)
+    comps = 0
+    swaps = 0
     gap = n // 2
-    comparacoes = 0
-    trocas = 0
 
     while gap > 0:
+        comps += 1
         for i in range(gap, n):
-            temp = arr[i]
+            temp = lista[i]
             j = i
-            while j >= gap and arr[j - gap] > temp:
-                comparacoes += 1
-                arr[j] = arr[j - gap]
-                trocas += 1
+            while j >= gap and lista[j - gap] > temp:
+                comps += 1
+                lista[j] = lista[j - gap]
+                swaps += 1
                 j -= gap
-            arr[j] = temp
-            if j >= gap:
-                comparacoes += 1
+            lista[j] = temp
         gap = gap // 2
 
-    return arr, comparacoes, trocas
+    return lista, comps, swaps
 
 
-# Heap Sort
-def heap_sort(arr):
-    comparacoes = 0
-    trocas = 0
+def heapsort(v):
+    """Heapsort usando max-heap"""
+    comps = 0
+    swaps = 0
+    tam = len(v)
 
     def heapify(arr, n, i):
-        nonlocal comparacoes, trocas
+        nonlocal comps, swaps
         maior = i
-        esquerda = 2 * i + 1
-        direita = 2 * i + 2
+        esq = 2 * i + 1
+        dir = 2 * i + 2
 
-        if esquerda < n and arr[i] < arr[esquerda]:
-            comparacoes += 1
-            maior = esquerda
+        comps += 2
+        if esq < n and arr[esq] > arr[maior]:
+            maior = esq
 
-        if direita < n and arr[maior] < arr[direita]:
-            comparacoes += 1
-            maior = direita
+        comps += 2
+        if dir < n and arr[dir] > arr[maior]:
+            maior = dir
 
+        comps += 1
         if maior != i:
             arr[i], arr[maior] = arr[maior], arr[i]
-            trocas += 1
+            swaps += 1
             heapify(arr, n, maior)
 
-    n = len(arr)
+    # Constroi heap máximo
+    for i in range(tam // 2 - 1, -1, -1):
+        heapify(v, tam, i)
 
-    for i in range(n // 2 - 1, -1, -1):
-        heapify(arr, n, i)
+    # Extrai elementos um por um
+    for i in range(tam - 1, 0, -1):
+        v[i], v[0] = v[0], v[i]
+        swaps += 1
+        heapify(v, i, 0)
 
-    for i in range(n - 1, 0, -1):
-        arr[i], arr[0] = arr[0], arr[i]
-        trocas += 1
-        heapify(arr, i, 0)
-
-    return arr, comparacoes, trocas
-
-
-# Funções para gerar vetores
-def vetor_aleatorio(tamanho):
-    return [random.randint(0, 1000) for _ in range(tamanho)]
+    return v, comps, swaps
 
 
-def vetor_ordenado(tamanho):
-    return [i for i in range(tamanho)]
+def gera_aleatorio(n):
+    return [random.randint(0, 1000) for _ in range(n)]
 
 
-def vetor_inversamente_ordenado(tamanho):
-    return [i for i in range(tamanho, 0, -1)]
+def gera_ordenado(n):
+    return list(range(n))
 
 
-# Função para testar os algoritmos
-def testar_algoritmos(tamanhos_vetores, tipo_vetor):
+def gera_reverso(n):
+    return list(range(n, 0, -1))
+
+
+def roda_testes(tamanhos, tipo):
     resultados = []
+    print(f"\nIniciando testes para vetores {tipo.replace('_', ' ')}...")
 
-    for tamanho in tamanhos_vetores:
-        if tipo_vetor == "aleatorio":
-            arr = vetor_aleatorio(tamanho)
-        elif tipo_vetor == "ordenado":
-            arr = vetor_ordenado(tamanho)
-        elif tipo_vetor == "inversamente_ordenado":
-            arr = vetor_inversamente_ordenado(tamanho)
+    for n in tamanhos:
+        print(f"  Tamanho: {n}", end=' | ')
+        # Gera vetor conforme tipo
+        if tipo == 'Aleatório':
+            original = gera_aleatorio(n)
+        elif tipo == 'Ordenado':
+            original = gera_ordenado(n)
+        elif tipo == 'Inversamente ordenado':
+            original = gera_reverso(n)
 
-        # Quick Sort
-        inicio = time.time()
-        arr_ordenado, comparacoes, trocas = quick_sort(arr.copy())
-        tempo_quick = time.time() - inicio
-        resultados.append(('Quick Sort', tamanho, tempo_quick, comparacoes, trocas))
+        # Testa cada algoritmo
+        for algo in [quicksort, shellsort, heapsort]:
+            comps_total = 0
+            trocas_total = 0
+            inicio = time()
+            for _ in range(3):
+                copia = original.copy()
+                arr, comps, trocas = algo(copia)
+                trocas_total += trocas / 3
+                comps_total += comps / 3
+            tempo = time() - inicio
+            tempo = tempo / 3
 
-        # Shell Sort
-        inicio = time.time()
-        arr_ordenado, comparacoes, trocas = shell_sort(arr.copy())
-        tempo_shell = time.time() - inicio
-        resultados.append(('Shell Sort', tamanho, tempo_shell, comparacoes, trocas))
-
-        # Heap Sort
-        inicio = time.time()
-        arr_ordenado, comparacoes, trocas = heap_sort(arr.copy())
-        tempo_heap = time.time() - inicio
-        resultados.append(('Heap Sort', tamanho, tempo_heap, comparacoes, trocas))
+            resultados.append((
+                algo.__name__,
+                n,
+                tempo,
+                comps,
+                trocas_total
+            ))
+            print(f'{algo.__name__[0]}', end='')
+        print()
 
     return resultados
 
 
-# Função para plotar os resultados
-def plotar_resultados(resultados, tipo_vetor):
-    tamanhos = sorted(list(set(resultado[1] for resultado in resultados)))
-    algoritmos = ['Quick Sort', 'Shell Sort', 'Heap Sort']
+def plota_graficos(dados, tipo):
+    algoritmos = sorted({d[0] for d in dados})
+    tamanhos = sorted({d[1] for d in dados})
 
-    # Tempo de execução
-    plt.figure(figsize=(10, 5))
-    for algoritmo in algoritmos:
-        tempos = [resultado[2] for resultado in resultados if resultado[0] == algoritmo]
-        plt.plot(tamanhos, tempos, label=algoritmo)
-    plt.xlabel('Tamanho do Vetor')
-    plt.ylabel('Tempo de Execução (s)')
-    plt.title(f'Tempo de Execução dos Algoritmos de Ordenação ({tipo_vetor})')
+    # Configura estilo do gráfico
+    plt.style.use('ggplot')
+    cores = {'quicksort': '#FF6B6B', 'shellsort': '#4ECDC4', 'heapsort': '#45B7D1'}
+
+    # Plotar tempos
+    plt.figure(figsize=(12, 6))
+    for algo in algoritmos:
+        x = [d[1] for d in dados if d[0] == algo]
+        y = [d[2] for d in dados if d[0] == algo]  # Índice 2 = tempo
+        plt.plot(x, y, 'o--', label=algo, color=cores[algo])
+    plt.title(f'Tempo de execução - {tipo}')
+    plt.xlabel('Tamanho do vetor')
+    plt.ylabel('Segundos')
     plt.legend()
-    plt.show()
+    plt.savefig(f'tempo_{tipo}.png', dpi=200)
+    plt.close()
 
-    # Número de comparações
-    plt.figure(figsize=(10, 5))
-    for algoritmo in algoritmos:
-        comparacoes = [resultado[3] for resultado in resultados if resultado[0] == algoritmo]
-        plt.plot(tamanhos, comparacoes, label=algoritmo)
-    plt.xlabel('Tamanho do Vetor')
-    plt.ylabel('Número de Comparações')
-    plt.title(f'Número de Comparações dos Algoritmos de Ordenação ({tipo_vetor})')
+    # Plotar comparações
+    plt.figure(figsize=(12, 6))
+    for algo in algoritmos:
+        x = [d[1] for d in dados if d[0] == algo]
+        y = [d[3] for d in dados if d[0] == algo]  # Índice 3 = comparações
+        plt.plot(x, y, 'o--', label=algo, color=cores[algo])
+    plt.title(f'Comparações realizadas - {tipo}')
+    plt.xlabel('Tamanho do vetor')
+    plt.ylabel('Número de comparações')
     plt.legend()
-    plt.show()
+    plt.savefig(f'comps_{tipo}.png', dpi=200)
+    plt.close()
 
-    # Número de trocas
-    plt.figure(figsize=(10, 5))
-    for algoritmo in algoritmos:
-        trocas = [resultado[4] for resultado in resultados if resultado[0] == algoritmo]
-        plt.plot(tamanhos, trocas, label=algoritmo)
-    plt.xlabel('Tamanho do Vetor')
-    plt.ylabel('Número de Trocas')
-    plt.title(f'Número de Trocas dos Algoritmos de Ordenação ({tipo_vetor})')
+    # Trocas
+    plt.figure(figsize=(12, 6))
+    for algo in algoritmos:
+        x = [d[1] for d in dados if d[0] == algo]
+        y = [d[4] for d in dados if d[0] == algo]  # Índice 4 = trocas
+        plt.plot(x, y, 'o--', label=algo, color=cores[algo])
+    plt.title(f'Trocas realizadas - {tipo}')
+    plt.xlabel('Tamanho do vetor')
+    plt.ylabel('Número de trocas')
     plt.legend()
-    plt.show()
+    plt.savefig(f'trocas_{tipo}.png', dpi=200)
+    plt.close()
 
 
-# Testando os algoritmos
-tamanhos_vetores = [100, 500, 1000, 5000, 10000]
+if __name__ == '__main__':
+    tamanhos = list(range(0, 11000, 1000))
 
-# Testes com vetores aleatórios
-print("Testes com vetores aleatórios:")
-resultados_aleatorios = testar_algoritmos(tamanhos_vetores, "aleatorio")
-plotar_resultados(resultados_aleatorios, "Vetores Aleatórios")
+    # Rodar para todos os tipos de vetor
+    for tipo in ['Aleatório', 'Ordenado', 'Inversamente ordenado']:
+        dados = roda_testes(tamanhos, tipo)
+        plota_graficos(dados, tipo)
 
-# Testes com vetores ordenados
-print("Testes com vetores ordenados:")
-resultados_ordenados = testar_algoritmos(tamanhos_vetores, "ordenado")
-plotar_resultados(resultados_ordenados, "Vetores Ordenados")
-
-# Testes com vetores inversamente ordenados
-print("Testes com vetores inversamente ordenados:")
-resultados_inversamente_ordenados = testar_algoritmos(tamanhos_vetores, "inversamente_ordenado")
-plotar_resultados(resultados_inversamente_ordenados, "Vetores Inversamente Ordenados")
+    print("\nFim dos testes! Verifique os gráficos gerados.")
